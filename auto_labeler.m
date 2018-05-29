@@ -1,7 +1,7 @@
-% Code for generating labels from TX data
+% Automatically generate labels from TX data
 
-% encoding = 'NRZ'; %binary
-encoding = 'PAM4'; %base 4
+encoding = 'NRZ'; %binary
+% encoding = 'PAM4'; %base 4
 
 if strcmp(encoding, 'NRZ')
     fid = fopen('data/data_Binary_NRZ_TX(small).csv');

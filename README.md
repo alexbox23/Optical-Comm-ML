@@ -3,7 +3,7 @@ SVM for optical communication over dispersive fiber
 
 The goal of this project is to use support vector machines to classify a distorted signal into a digital signal.
 
-Adapted from https://www.mathworks.com/matlabcentral/fileexchange/63158-support-vector-machine
+reference code: https://www.mathworks.com/matlabcentral/fileexchange/63158-support-vector-machine
 
 various kernels: https://www.mathworks.com/matlabcentral/fileexchange/63033-svm-using-various-kernels
 
@@ -11,15 +11,14 @@ nonlinear classification: https://www.mathworks.com/matlabcentral/fileexchange/6
 
 Outline of Algorithm:
 
-The time-domain signal is fed into the SVM, where each time sample is an instance of a 1D feature.
-The SVM will return the classification for each sample (0 or 1 in the binary case).
-A digital string of data is created by taking the class that is the majority within each clock cycle.
+The time-domain signal is partitioned into sets of samples based on the bit rate. The SVM is trained on the samples after they have been cast as 2D features. The y-axis is the signal value and the x-axis is the time from the beginning of the clock cycle.
+The SVM will return the classification for each sample (0 or 1 in the binary case). A digital string of data is created using the majority of the classes within each clock cycle.
 
 TODO
 
-- understand and clean code, consolidate into a single matlab file
+- implement basic SVM
 
-- label binary dataset and test code
+- experiment with soft-margin and non-linear kernels
 
 - implement multi-class and test on PAM4 dataset
 

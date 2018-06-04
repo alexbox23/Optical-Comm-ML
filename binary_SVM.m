@@ -32,6 +32,8 @@ for n=1:test_length
     test_set(n,3) = labels(floor(data(n+train_length,1)/bit_length) + 1);
 end
 
+%training
+disp('training...')
 w = ones(16, 1);
 b = 2;
 lambda = 0; %regularizer
@@ -42,7 +44,6 @@ hinge_loss = 1;
 tolerance = 0.005;
 
 while hinge_loss >= tolerance
-    disp(epoch)
     hinge_loss = 0;
     sub_grad_w = zeros(16, 1);
     sub_grad_b = 0;
@@ -91,5 +92,30 @@ while hinge_loss >= tolerance
     end
 end
 
-figure
-plot(1:length(loss), loss)
+disp('finished testing. epochs:')
+disp(epoch)
+%testing
+total_loss = 0;
+missed_bits = 0;
+for n=1:test_length/16
+    x = test_set(16*(n-1)+1:16*n,2);
+    class = 1;
+    hinge_loss_1 = max(0, 1 - class * (dot(w, x) - b));
+    class = -1;
+    hinge_loss_0 = max(0, 1 - class * (dot(w, x) - b));
+    if hinge_loss_1 < hinge_loss_0
+        prediction = 1;
+        total_loss = total_loss + hinge_loss_1;
+    else
+        prediction = 0;
+        total_loss = total_loss + hinge_loss_0;
+    end
+    if not(prediction == test_set(16*n,3))
+        missed_bits = missed_bits + 1;
+    end
+end
+total_loss = total_loss/test_length + lambda*norm(w)^2;
+disp('total loss:')
+disp(total_loss)
+disp('missed bits')
+disp(missed_bits)

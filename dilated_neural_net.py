@@ -4,6 +4,7 @@ training_epochs = 500
 num_layers = 4
 learning_rate = 0.01
 input_samples = 2 ** num_layers
+batch_size = 16
 
 x = tf.placeholder(tf.float32, [input_samples, 1])
 y = tf.placeholder(tf.float32, [1, 1])
@@ -30,6 +31,8 @@ cost = tf.losses.mean_squared_error(y, hidden_outputs[-1])
 
 weight_gradients = []
 bias_gradients = []
+weight_updates = []
+bias_updates = []
 for i in range(num_layers):
     W = weights[i]
     b = biases[i]
@@ -40,6 +43,8 @@ for i in range(num_layers):
 
     new_W = W.assign(W - learning_rate * grad_W)
     new_b = b.assign(b - learning_rate * grad_b)
+    weigt_updates.append(new_W)
+    bias_updates.append(new_b)
 
 init = tf.global_variables_initializer()
 
@@ -48,4 +53,7 @@ with tf.Session() as sess:
 
     for epoch in range(training_epochs):
         avg_cost = 0
-        "TODO: process csv files into labels and inputs"
+
+        for i in range(batch_size):
+            batch_
+            "TODO: write csv import, train data"

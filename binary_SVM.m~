@@ -35,14 +35,13 @@ end
 w = ones(16, 1);
 b = 2;
 lambda = 0; %regularizer
-learning_rate = 10;
+learning_rate = 100;
 epoch = 1;
-loss = zeros(1,1);
+loss = zeros(epochs,1);
 hinge_loss = 1;
-tolerance = 0.005;
+tolerance = 0.001;
 
 while hinge_loss >= tolerance
-    disp(epoch)
     hinge_loss = 0;
     sub_grad_w = zeros(16, 1);
     sub_grad_b = 0;
@@ -86,10 +85,8 @@ while hinge_loss >= tolerance
     hinge_loss = hinge_loss/train_length + lambda*norm(w)^2;
     loss(epoch) = hinge_loss;
     epoch = epoch + 1;
-    if hinge_loss < 2*tolerance
-        learning_rate = 1;
-    end
+    if hinge_loss > 10*tolerance
 end
 
 figure
-plot(1:length(loss), loss)
+plot(1:epochs, loss)

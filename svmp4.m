@@ -1,10 +1,11 @@
 % SVM for Binary NRZ RX data
 clc;
 clear;
-fid = fopen('data_PAM4_RX(small).csv');
+fid = fopen('data/data_PAM4_RX(small).csv');
 data = textscan(fid, '%f %f', 'Delimiter', ',', 'HeaderLines', 7);
 fclose(fid);
 data = cell2mat(data);
+data_mean=mean(data(:,2));
 
 fid = fopen('data/labels_PAM4_TX.csv');
 labels = textscan(fid, '%f', 'Delimiter', ',');
@@ -112,14 +113,15 @@ disp(hinge_loss10)
 lambda = 0; %regularizer
 tolerance = 0.05;
 learning_rate = 1;
+offset_training_set=abs(training_set-data_mean*ones(length(training_set),1));
 while hinge_loss01 >= tolerance
     hinge_loss01 = 0;
     sub_grad_w01 = zeros(16, 1);
     sub_grad_b01 = 0;
     for n=1:train_length/16
-        x = training_set(16*(n-1)+1:16*n,2);
+        x = offset_training_set(16*(n-1)+1:16*n,2);
         class01 = training_set(16*n,3);
-        if (class01 ==3)
+        if or(class01 == 3,class01 ==1)
             class01 = 1;
         else
             class01 = -1;
@@ -133,9 +135,9 @@ while hinge_loss01 >= tolerance
     w01 = w01 - learning_rate*sub_grad_w01;
     
     for n=1:train_length/16
-        x = training_set(16*(n-1)+1:16*n,2);
+        x = offset_training_set(16*(n-1)+1:16*n,2);
         class01 = training_set(16*n,3);
-        if (class01 ==3)
+        if or(class01 == 3,class01 ==1)
             class01 = 1;
         else
             class01 = -1;
@@ -149,9 +151,9 @@ while hinge_loss01 >= tolerance
     b01 = b01 - learning_rate*sub_grad_b01;
     
     for n=1:train_length/16
-        x = training_set(16*(n-1)+1:16*n,2);
+        x = offset_training_set(16*(n-1)+1:16*n,2);
         class01 = training_set(16*n,3);
-        if (class01 ==3)
+        if or(class01 == 3,class01 ==1)
             class01 = 1;
         else
             class01 = -1;
@@ -205,7 +207,7 @@ total_loss10 = 16*total_loss10/test_length + lambda*norm(w10)^2;
 total_loss01 = 0;
 prediction01(n) = zeros(1,1);
 for n=1:test_length/16
-    x = test_set(16*(n-1)+1:16*n,2);
+    x = abs(test_set(16*(n-1)+1:16*n,2)-data_mean*ones(16,1));
     class = 1;
     hinge_loss_1 = max(0, 1 - class * (dot(w01, x) - b01));
     class = -1;
@@ -248,7 +250,7 @@ end
 
 disp('test loss:')
 disp(total_loss)
-disp('missed bits')
+disp('missed bits:')
 disp(missed_bits)
-disp('missed symbols')
+disp('missed symbols:')
 disp(missed_syms)

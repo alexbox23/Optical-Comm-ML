@@ -117,3 +117,20 @@ with tf.Session() as sess:
 
     print(hidden_outputs[-1].eval({x: test_input, y: [test_labels]})[:8])
     print(test_labels[:8])
+
+    "TODO:
+        change to classifier
+        add pooling layers 
+        cost function: cross entropy
+
+        start at 2nd bit to do dilated convolution, window lag = 16, sweep over all 16 samples. 
+        dilated convolution layer: k filters = number of bits squared = 4 for binary, 16 for pam4
+        max pooling layer: down sample to 8 samples per bit
+        dilated convolution layer: k filters
+        max pooling: down sample to 4
+        concatenate k x k into single waveform
+        matrix of weights to classes 
+
+
+
+    "

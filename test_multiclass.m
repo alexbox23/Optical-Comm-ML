@@ -1,8 +1,8 @@
-train_length = 2048;
-reg_pen = 1e-4;
+train_length = 128;
+reg_pen = 0;
 learning_rate = 10;
-tolerance = 0.1;
-slowdown = true;
+tolerance = 0.01;
+slowdown = false;
 
 file_RX = 'data/data_PAM4_RX(small).csv';
 file_labels = 'data/labels_PAM4_TX.csv';
@@ -18,7 +18,7 @@ class_pos = [0 1];
 disp(class_pos);
 disp(epoch);
 
-training_set(:,2) = abs(training_set(:,2)'-data_mean*ones(1,length(training_set(:,2))));
+training_set(:,2) = abs(training_set(:,2)-data_mean*ones(length(training_set(:,2)), 1));
 
 class_pos = [0 3];
 [epoch, loss, w_lsb, b_lsb] = SVM_train(training_set, class_pos, learning_rate, tolerance, reg_pen, slowdown);
@@ -30,7 +30,7 @@ class_pos = [0 1];
 disp(avg_loss);
 disp(misclass);
 
-test_set(:,2) = abs(test_set(:,2)'-data_mean*ones(1,length(test_set(:,2))));
+test_set(:,2) = abs(test_set(:,2)-data_mean*ones(length(test_set(:,2)), 1));
 
 class_pos = [0 3];
 [avg_loss, misclass] = SVM_test(test_set, class_pos, w_lsb, b_lsb, reg_pen);

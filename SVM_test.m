@@ -34,7 +34,7 @@ function [avg_loss, misclass]=SVM_test(test_set, class_pos, w, b, reg_pen)
             prediction = 1;
             avg_loss = avg_loss + hinge_loss_1;
         else
-            prediction = 0;
+            prediction = -1;
             avg_loss = avg_loss + hinge_loss_0;
         end
         label = test_set(bit_samples*n,3);

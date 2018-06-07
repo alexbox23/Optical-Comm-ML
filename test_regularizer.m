@@ -17,7 +17,6 @@ epoch_data = zeros(length(regularizers), 1);
 w_data = zeros(length(regularizers), 1);
 
 for n=1:length(regularizers)
-    disp(n);
     reg_pen = regularizers(n);
     [epoch, loss, w, b]=SVM_train(training_set, class_pos, learning_rate, tolerance, reg_pen, slowdown);
     epoch_data(n) = epoch;

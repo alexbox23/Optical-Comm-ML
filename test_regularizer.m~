@@ -22,7 +22,7 @@ for n=1:length(regularizers)
     [epoch, loss, w, b]=SVM_train(training_set, class_pos, learning_rate, tolerance, reg_pen, slowdown);
     epoch_data(n) = epoch;
     w_data(n) = norm(w);
-    [avg_loss, misclass]=SVM_test(test_set, class_pos, w, b, reg_pen);
+    [avg_loss, misclass]=SVM_test(test_set, class_pos, w, b, reg_pen)
     loss_data(n) = avg_loss;
     missed_data(n) = misclass;
 end

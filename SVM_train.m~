@@ -5,8 +5,8 @@
 %                   column 1: time (ns)
 %                   column 2: electrical signal (a.u.)
 %                   column 3: labels (0 or 1 for Binary, 0-3 for PAM4)
-%   class_pos - array of labels to be represented by class = +1
 %   learning_rate - step size for gradient descent (\mu)
+%   class_pos - array of labels under class = +1
 %   tolerance - upper bound condition for training loss
 %   reg_pen - soft margin regularization penalty (\lambda)
 %   slowdown - boolean to toggle slowdown option
@@ -20,7 +20,7 @@
 
 
 
-function [epoch, loss, w, b]=SVM_train(training_set, class_pos, learning_rate, tolerance, reg_pen, slowdown)
+function [epoch, loss, w, b]=SVM_train(training_set, reg_pen, learning_rate, tolerance, slowdown, class_pos)
     slow_tol = 2*tolerance; % slowdown option: tolerance for triggering slow_rate
     slow_rate = 1;          % slowdown option: smaller value for learning_rate
     

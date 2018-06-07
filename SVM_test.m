@@ -5,8 +5,10 @@
 %                   column 1: time (ns)
 %                   column 2: electrical signal (a.u.)
 %                   column 3: class (+1 or -1)
+%   class_pos - array of labels to be represented by class = +1
 %   w - hyperplane weight vector
 %   b - hyperplane bias constant
+%   reg_pen - soft margin regularization penalty (\lambda)
 %
 % returns:
 %   avg_loss - average loss over test_set
@@ -14,7 +16,7 @@
 
 
 
-function [avg_loss, misclass]=SVM_test(test_set, w, b, reg_pen)
+function [avg_loss, misclass]=SVM_test(test_set, class_pos, w, b, reg_pen)
     bit_samples = 16;       % hardcoded partitioning of data
     test_length = length(test_set);
     
@@ -35,7 +37,13 @@ function [avg_loss, misclass]=SVM_test(test_set, w, b, reg_pen)
             prediction = 0;
             avg_loss = avg_loss + hinge_loss_0;
         end
-        if not(prediction == test_set(bit_samples*n,3))
+        label = test_set(bit_samples*n,3);
+        if ismember(label, class_pos)
+            class = 1;
+        else
+            class = -1;
+        end
+        if not(prediction == class)
             misclass = misclass + 1;
         end
     end

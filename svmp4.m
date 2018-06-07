@@ -1,4 +1,4 @@
-function [epoch10,epoch01, total_loss, missed_bits,missed_syms,loss01,loss10]=svmp4(train_length,reg_pen,learning_rate,tolerance)
+function [epoch10,epoch01, total_loss, missed_bits,missed_syms,loss01,loss10]=svmp4(train_syms,reg_pen,learning_rate,tolerance)
 % SVM for Binary NRZ RX data
 fid = fopen('data/data_PAM4_RX(small).csv');
 data = textscan(fid, '%f %f', 'Delimiter', ',', 'HeaderLines', 7);
@@ -15,23 +15,32 @@ learning_rate2=learning_rate;
 bit_length = 0.04; %time length of one bit (ns)
 T = data(2,1); %sampling interval (ns)
 bit_samples = bit_length/T; %number of samples in one bit
+train_length=train_syms*bit_samples;
 
+order=randperm(length(data)/bit_samples);
 % train_portion = train_size/length(data); %proportion of data used for training
 % train_length = floor(length(data) * train_portion);
+newdata=zeros(length(data),1);
+newlabels=zeros(length(labels),1);
+for n=1:length(data)/bit_samples
+    i=order(n);
+    newdata((n-1)*16+1:n*16)=data((i-1)*16+1:i*16,2);
+    newlabels(n)=labels(i);
+end
+
 training_set = zeros(train_length, 3);
 for n=1:train_length
-    training_set(n,1) = mod(data(n,1), bit_length); %time wrt clock cycle (ns)
-    training_set(n,2) = data(n,2); %electrical signal value
-    training_set(n,3) = labels(floor(data(n,1)/bit_length) + 1); %label
+    training_set(n,2) = newdata(n); %electrical signal value
+    training_set(n,3) = newlabels(ceil(n/bit_samples)); %label
 end
 
 test_length = length(data) - train_length;
 test_set = zeros(test_length, 3);
 for n=1:test_length
-    test_set(n,1) = mod(data(n+train_length,1), bit_length);
-    test_set(n,2) = data(n+train_length,2);
-    test_set(n,3) = labels(floor(data(n+train_length,1)/bit_length) + 1);
+    test_set(n,2) = newdata(n+train_length);
+    test_set(n,3) = newlabels(ceil((n+train_length)/bit_samples));
 end
+
 
 %training
 %disp('training...')
@@ -99,9 +108,9 @@ while hinge_loss10 >= tolerance
     hinge_loss10 = bit_samples*hinge_loss10/train_length + lambda*norm(w10)^2;
     loss10(epoch10) = hinge_loss10;
     epoch10 = epoch10 + 1;
-    if hinge_loss10 < 2*tolerance
-        learning_rate = 1;
-    end
+%     if hinge_loss10 < 2*tolerance
+%         learning_rate = 1;
+%     end
 end
 
 %Train LSB SVM
@@ -110,7 +119,6 @@ end
 % disp('training loss')
 % disp(hinge_loss10)
 lambda = 0; %regularizer
-tolerance = 0.05;
 
 offset_training_set=abs(training_set(:,2)'-data_mean*ones(1,length(training_set(:,2))));
 while hinge_loss01 >= tolerance
@@ -163,9 +171,9 @@ while hinge_loss01 >= tolerance
     hinge_loss01 = bit_samples*hinge_loss01/train_length + lambda*norm(w01)^2;
     loss01(epoch01) = hinge_loss01;
     epoch01 = epoch01 + 1;
-    if hinge_loss01 < 2*tolerance
-        learning_rate2 = 1;
-    end
+%     if hinge_loss01 < 2*tolerance
+%         learning_rate2 = 1;
+%     end
 end
 
 % disp('finished training. epochs:')

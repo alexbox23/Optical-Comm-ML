@@ -20,7 +20,7 @@ disp(epoch);
 
 training_set(:,2) = abs(training_set(:,2)-data_mean*ones(length(training_set(:,2)), 1));
 
-class_pos = [0 3];
+class_pos = [0 2];
 [epoch, loss, w_lsb, b_lsb] = SVM_train(training_set, class_pos, learning_rate, tolerance, reg_pen, slowdown);
 disp(class_pos);
 disp(epoch);
@@ -32,7 +32,7 @@ disp(misclass);
 
 test_set(:,2) = abs(test_set(:,2)-data_mean*ones(length(test_set(:,2)), 1));
 
-class_pos = [0 3];
+class_pos = [0 2];
 [avg_loss, misclass] = SVM_test(test_set, class_pos, w_lsb, b_lsb, reg_pen);
 disp(avg_loss);
 disp(misclass);

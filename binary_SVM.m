@@ -56,9 +56,8 @@ while hinge_loss >= tolerance
             sub_grad_w = sub_grad_w - class * x;
         end
     end
-    sub_grad_w = sub_grad_w/train_length + 2*lambda*w;
+    sub_grad_w = bit_samples*sub_grad_w/train_length + 2*lambda*w;
     w = w - learning_rate*sub_grad_w;
-    
     for n=1:train_length/bit_samples
         x = training_set(bit_samples*(n-1)+1:bit_samples*n,2);
         class = training_set(bit_samples*n,3);
@@ -70,9 +69,8 @@ while hinge_loss >= tolerance
             sub_grad_b = sub_grad_b + class;
         end
     end
-    sub_grad_b = sub_grad_b/train_length;
+    sub_grad_b = bit_samples*sub_grad_b/train_length;
     b = b - learning_rate*sub_grad_b;
-    
     for n=1:train_length/bit_samples
         x = training_set(bit_samples*(n-1)+1:bit_samples*n,2);
         class = training_set(bit_samples*n,3);
@@ -82,6 +80,7 @@ while hinge_loss >= tolerance
         value = 1 - class * (dot(w, x) - b);
         hinge_loss = hinge_loss + max(0, value);
     end
+    
     hinge_loss = bit_samples*hinge_loss/train_length + lambda*norm(w)^2;
     loss(epoch) = hinge_loss;
     epoch = epoch + 1;

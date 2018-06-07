@@ -32,6 +32,15 @@ for n=1:test_length
     test_set(n,3) = labels(floor(data(n+train_length,1)/bit_length) + 1);
 end
 
+set=zeros(length(data),3);
+for n=1:length(data)
+    set(n,1) = mod(data(n,1), bit_length); %time wrt clock cycle (ns)
+    set(n,2) = data(n,2); %electrical signal value
+    set(n,3) = labels(floor(data(n,1)/bit_length) + 1); %label
+end
+
+order=randperm(length(data)/bit_samples);
+
 %training
 %disp('Training...')
 w = zeros(bit_samples, 1);
@@ -45,9 +54,10 @@ while hinge_loss >= tolerance
     hinge_loss = 0;
     sub_grad_w = zeros(bit_samples, 1);
     sub_grad_b = 0;
-    for n=1:train_length/bit_samples
-        x = training_set(bit_samples*(n-1)+1:bit_samples*n,2);
-        class = training_set(bit_samples*n,3);
+    for i=1:train_length/bit_samples
+        n=order(i);
+        x = set(bit_samples*(n-1)+1:bit_samples*n,2);
+        class = set(bit_samples*n,3);
         if class == 0
             class = -1;
         end
@@ -56,11 +66,13 @@ while hinge_loss >= tolerance
             sub_grad_w = sub_grad_w - class * x;
         end
     end
-    sub_grad_w = bit_samples*sub_grad_w/train_length + 2*lambda*w;
+    sub_grad_w = sub_grad_w/train_length + 2*lambda*w;
     w = w - learning_rate*sub_grad_w;
-    for n=1:train_length/bit_samples
-        x = training_set(bit_samples*(n-1)+1:bit_samples*n,2);
-        class = training_set(bit_samples*n,3);
+    
+    for i=1:train_length/bit_samples
+        n=order(i);
+        x = set(bit_samples*(n-1)+1:bit_samples*n,2);
+        class = set(bit_samples*n,3);
         if class == 0
             class = -1;
         end
@@ -69,24 +81,25 @@ while hinge_loss >= tolerance
             sub_grad_b = sub_grad_b + class;
         end
     end
-    sub_grad_b = bit_samples*sub_grad_b/train_length;
+    sub_grad_b = sub_grad_b/train_length;
     b = b - learning_rate*sub_grad_b;
-    for n=1:train_length/bit_samples
-        x = training_set(bit_samples*(n-1)+1:bit_samples*n,2);
-        class = training_set(bit_samples*n,3);
+    
+    for i=1:train_length/bit_samples
+        n=order(i);
+        x = set(bit_samples*(n-1)+1:bit_samples*n,2);
+        class = set(bit_samples*n,3);
         if class == 0
             class = -1;
         end
         value = 1 - class * (dot(w, x) - b);
         hinge_loss = hinge_loss + max(0, value);
     end
-    
     hinge_loss = bit_samples*hinge_loss/train_length + lambda*norm(w)^2;
     loss(epoch) = hinge_loss;
     epoch = epoch + 1;
-    if hinge_loss < 2*tolerance
-        learning_rate = 1;
-    end
+%     if hinge_loss < 2*tolerance
+%         learning_rate = 1;
+%     end
 end
 
 %disp('finished testing. epochs:')
@@ -94,8 +107,9 @@ end
 %testing
 total_loss = 0;
 missed_bits = 0;
-for n=1:test_length/bit_samples
-    x = test_set(bit_samples*(n-1)+1:bit_samples*n,2);
+for i=train_length/bit_samples+1:train_length/bit_samples+test_length/bit_samples
+    n=order(i);
+    x = set(bit_samples*(n-1)+1:bit_samples*n,2);
     class = 1;
     hinge_loss_1 = max(0, 1 - class * (dot(w, x) - b));
     class = -1;
@@ -107,7 +121,7 @@ for n=1:test_length/bit_samples
         prediction = 0;
         total_loss = total_loss + hinge_loss_0;
     end
-    if not(prediction == test_set(bit_samples*n,3))
+    if not(prediction == set(bit_samples*n,3))
         missed_bits = missed_bits + 1;
     end
 end

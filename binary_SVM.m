@@ -1,6 +1,6 @@
+function [epoch, total_loss, missed_bits,loss,w]=binary_SVM(train_length,reg_pen,learning_rate,tolerance)
 % SVM for Binary NRZ RX data
-clc;
-clear;
+%clearvars -except train_length reg_pen learning_rate tolerance
 fid = fopen('data/data_Binary_NRZ_RX(small).csv');
 data = textscan(fid, '%f %f', 'Delimiter', ',', 'HeaderLines', 7);
 fclose(fid);
@@ -15,8 +15,8 @@ bit_length = 0.04; %time length of one bit (ns)
 T = data(2,1); %sampling interval (ns)
 bit_samples = bit_length/T; %number of samples in one bit
 
-train_portion = 0.5; %proportion of data used for training
-train_length = floor(length(data) * train_portion);
+% train_portion = train_size/length(data); %proportion of data used for training
+% train_length = floor(length(data) * train_portion);
 training_set = zeros(train_length, 3);
 for n=1:train_length
     training_set(n,1) = mod(data(n,1), bit_length); %time wrt clock cycle (ns)
@@ -33,23 +33,21 @@ for n=1:test_length
 end
 
 %training
-disp('training...')
-w = ones(16, 1);
-b = 2;
-lambda = 0; %regularizer
-learning_rate = 10;
+%disp('Training...')
+w = zeros(bit_samples, 1);
+b = 0;
+lambda = reg_pen; %regularizer
 epoch = 1;
 loss = zeros(1,1);
 hinge_loss = 1;
-tolerance = 0.005;
 
 while hinge_loss >= tolerance
     hinge_loss = 0;
-    sub_grad_w = zeros(16, 1);
+    sub_grad_w = zeros(bit_samples, 1);
     sub_grad_b = 0;
-    for n=1:train_length/16
-        x = training_set(16*(n-1)+1:16*n,2);
-        class = training_set(16*n,3);
+    for n=1:train_length/bit_samples
+        x = training_set(bit_samples*(n-1)+1:bit_samples*n,2);
+        class = training_set(bit_samples*n,3);
         if class == 0
             class = -1;
         end
@@ -61,9 +59,9 @@ while hinge_loss >= tolerance
     sub_grad_w = sub_grad_w/train_length + 2*lambda*w;
     w = w - learning_rate*sub_grad_w;
     
-    for n=1:train_length/16
-        x = training_set(16*(n-1)+1:16*n,2);
-        class = training_set(16*n,3);
+    for n=1:train_length/bit_samples
+        x = training_set(bit_samples*(n-1)+1:bit_samples*n,2);
+        class = training_set(bit_samples*n,3);
         if class == 0
             class = -1;
         end
@@ -75,16 +73,16 @@ while hinge_loss >= tolerance
     sub_grad_b = sub_grad_b/train_length;
     b = b - learning_rate*sub_grad_b;
     
-    for n=1:train_length/16
-        x = training_set(16*(n-1)+1:16*n,2);
-        class = training_set(16*n,3);
+    for n=1:train_length/bit_samples
+        x = training_set(bit_samples*(n-1)+1:bit_samples*n,2);
+        class = training_set(bit_samples*n,3);
         if class == 0
             class = -1;
         end
         value = 1 - class * (dot(w, x) - b);
         hinge_loss = hinge_loss + max(0, value);
     end
-    hinge_loss = hinge_loss/train_length + lambda*norm(w)^2;
+    hinge_loss = bit_samples*hinge_loss/train_length + lambda*norm(w)^2;
     loss(epoch) = hinge_loss;
     epoch = epoch + 1;
     if hinge_loss < 2*tolerance
@@ -92,13 +90,13 @@ while hinge_loss >= tolerance
     end
 end
 
-disp('finished testing. epochs:')
-disp(epoch)
+%disp('finished testing. epochs:')
+%disp(epoch)
 %testing
 total_loss = 0;
 missed_bits = 0;
-for n=1:test_length/16
-    x = test_set(16*(n-1)+1:16*n,2);
+for n=1:test_length/bit_samples
+    x = test_set(bit_samples*(n-1)+1:bit_samples*n,2);
     class = 1;
     hinge_loss_1 = max(0, 1 - class * (dot(w, x) - b));
     class = -1;
@@ -110,12 +108,15 @@ for n=1:test_length/16
         prediction = 0;
         total_loss = total_loss + hinge_loss_0;
     end
-    if not(prediction == test_set(16*n,3))
+    if not(prediction == test_set(bit_samples*n,3))
         missed_bits = missed_bits + 1;
     end
 end
 total_loss = total_loss/test_length + lambda*norm(w)^2;
-disp('total loss:')
-disp(total_loss)
-disp('missed bits')
-disp(missed_bits)
+% disp(missed_bits)
+%disp('total loss:')
+%disp(total_loss)
+%disp('missed bits')
+%disp(missed_bits)
+
+end

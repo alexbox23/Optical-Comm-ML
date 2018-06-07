@@ -66,7 +66,7 @@ while hinge_loss >= tolerance
             sub_grad_w = sub_grad_w - class * x;
         end
     end
-    sub_grad_w = sub_grad_w/train_length + 2*lambda*w;
+    sub_grad_w = bit_samples*sub_grad_w/train_length + 2*lambda*w;
     w = w - learning_rate*sub_grad_w;
     
     for i=1:train_length/bit_samples
@@ -81,7 +81,7 @@ while hinge_loss >= tolerance
             sub_grad_b = sub_grad_b + class;
         end
     end
-    sub_grad_b = sub_grad_b/train_length;
+    sub_grad_b = bit_samples*sub_grad_b/train_length;
     b = b - learning_rate*sub_grad_b;
     
     for i=1:train_length/bit_samples
@@ -125,7 +125,7 @@ for i=train_length/bit_samples+1:train_length/bit_samples+test_length/bit_sample
         missed_bits = missed_bits + 1;
     end
 end
-total_loss = total_loss/test_length + lambda*norm(w)^2;
+total_loss = bit_samples*total_loss/test_length + lambda*norm(w)^2;
 % disp(missed_bits)
 %disp('total loss:')
 %disp(total_loss)

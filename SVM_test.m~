@@ -1,0 +1,64 @@
+% arguments: 
+%   test_set - array of labeled feature vectors
+%                   column 1: time (ns)
+%                   column 2: electrical signal (a.u.)
+%                   column 3: label (generated from auto_labeler.m)
+%   w - hyperplane weight vector
+%   b - hyperplane bias constant
+%
+% returns:
+%   avg_loss - average loss over test_set
+%   misclass - number of misclassified inputs
+
+
+
+function [avg_loss, misclass]=SVM_test(test_set, w, b, reg_pen)
+    bit_samples = 16;       % hardcoded partitioning of data
+    test_length = length(test_set);
+    
+    lambda = reg_pen;       %regularizer
+    
+    avg_loss = 0;
+    misclass = 0;
+    for n=1:test_length/bit_samples
+        x = test_set(bit_samples*(n-1)+1:bit_samples*n,2);
+        class = 1;
+        hinge_loss_1 = max(0, 1 - class * (dot(w, x) - b));
+        class = -1;
+        hinge_loss_0 = max(0, 1 - class * (dot(w, x) - b));
+        if hinge_loss_1 < hinge_loss_0
+            prediction = 1;
+            avg_loss = avg_loss + hinge_loss_1;
+        else
+            prediction = 0;
+            avg_loss = avg_loss + hinge_loss_0;
+        end
+        if not(prediction == test_set(bit_samples*n,3))
+            missed_bits = missed_bits + 1;
+        end
+    end
+    avg_loss = bit_samples*avg_loss/train_length + lambda*norm(w)^2;
+
+
+        
+        
+        n=order(i);
+        x = set(bit_samples*(n-1)+1:bit_samples*n,2);
+        class = 1;
+        hinge_loss_1 = max(0, 1 - class * (dot(w, x) - b));
+        class = -1;
+        hinge_loss_0 = max(0, 1 - class * (dot(w, x) - b));
+        if hinge_loss_1 < hinge_loss_0
+            prediction = 1;
+            total_loss = total_loss + hinge_loss_1;
+        else
+            prediction = 0;
+            total_loss = total_loss + hinge_loss_0;
+        end
+        if not(prediction == set(bit_samples*n,3))
+            missed_bits = missed_bits + 1;
+        end
+    end
+    total_loss = bit_samples*total_loss/test_length + lambda*norm(w)^2;
+
+end

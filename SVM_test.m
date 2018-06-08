@@ -14,14 +14,13 @@
 %   avg_loss - average loss over test_set
 %   misclass - number of misclassified inputs
 
-
-
 function [avg_loss, misclass]=SVM_test(test_set, class_pos, w, b, reg_pen)
     bit_samples = 16;       % hardcoded partitioning of data
     test_length = length(test_set);
     
     lambda = reg_pen;       % regularizer
     
+    % evaluate hinge loss and number of misclassifications
     avg_loss = 0;
     misclass = 0;
     for n=1:test_length/bit_samples

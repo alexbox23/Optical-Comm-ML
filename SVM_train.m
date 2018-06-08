@@ -18,8 +18,6 @@
 %   w - optimized hyperplane weight vector
 %   b - optimized hyperplane bias constant
 
-
-
 function [epoch, loss, w, b]=SVM_train(training_set, class_pos, learning_rate, tolerance, reg_pen, slowdown)
     slow_tol = 2*tolerance; % slowdown option: tolerance for triggering slow_rate
     slow_rate = 1;          % slowdown option: smaller value for learning_rate

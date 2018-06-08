@@ -1,5 +1,6 @@
 % Automatically generate labels from TX data
 
+% select option for data
 encoding = 'NRZ'; %binary
 % encoding = 'PAM4'; %base 4
 
@@ -16,6 +17,7 @@ data = textscan(fid, '%f %f', 'Delimiter', ',', 'HeaderLines', 7);
 fclose(fid);
 data = cell2mat(data);
 
+% partition data according to bit rate
 bit_length = 0.04; %time length of one bit (ns)
 T = data(2,1); %sampling interval (ns)
 bit_samples = bit_length/T; %number of samples in one bit
@@ -28,6 +30,7 @@ for n=1:length(labels)
     bit_end = n*bit_samples;
     bit_data = data(bit_start:bit_end,2);
     
+    % for each clock cycle, perform thresholding to assign label
     if strcmp(encoding, 'NRZ')
         votes = [sum(bit_data < 0.5) sum(bit_data >= 0.5)];
         if votes(1) > votes(2)
@@ -46,6 +49,7 @@ for n=1:length(labels)
     end
 end
 
+% export csv
 if strcmp(encoding, 'NRZ')
     csvwrite('data/labels_Binary_NRZ_TX.csv', labels);
 elseif strcmp(encoding, 'PAM4')

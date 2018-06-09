@@ -13,13 +13,16 @@ def csv_parser(file, column, header, dtype):
         for row in reader:
             if header > 0:
                 header -= 1
+            elif len(row) <= column:
+                break
             else:
                 ret.append(float(row[column]))
     return np.array(ret, dtype=dtype)
 
 def dilated_cnn_model(features, labels, mode):
     # creates neural network model
-    num_classes = 2
+    # num_classes = 2
+    num_classes = 4
     samples_per_label = 16
     input_layer = tf.reshape(features["x"], [-1, samples_per_label, 1])
 
@@ -81,8 +84,10 @@ def dilated_cnn_model(features, labels, mode):
 
 
 
-data = csv_parser('data/data_Binary_NRZ_RX(small).csv', 1, 7, np.float32)
-labels = csv_parser('data/labels_Binary_NRZ_TX.csv', 0, 0, np.int32)
+# data = csv_parser('data/data_Binary_NRZ_RX(small).csv', 1, 7, np.float32)
+# labels = csv_parser('data/labels_Binary_NRZ_TX.csv', 0, 0, np.int32)
+data = csv_parser('data/data_PAM4_RX(small).csv', 1, 7, np.float32)
+labels = csv_parser('data/labels_PAM4_TX.csv', 0, 0, np.int32)
 samples_per_label = 16
 data = np.reshape(data, [-1, samples_per_label])
 
@@ -103,11 +108,11 @@ train_input_fn = tf.estimator.inputs.numpy_input_fn(
     y=training_labels,
     batch_size=64,
     num_epochs=None,
-    shuffle=False)
+    shuffle=True)
 
 signal_classifier.train(
     input_fn=train_input_fn,
-    steps=20000,
+    steps=80000,
     hooks=[logging_hook])
 
 eval_input_fn = tf.estimator.inputs.numpy_input_fn(

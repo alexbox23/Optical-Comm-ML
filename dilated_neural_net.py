@@ -1,9 +1,12 @@
 import tensorflow as tf
 import csv
+import numpy as np
 
-# parses one column from the csv file
-# header is the number of rows at the beginning that don't contain data
-def csv_parser(file, column, header):
+tf.logging.set_verbosity(tf.logging.INFO)
+
+def csv_parser(file, column, header, dtype):
+    # parses one column from the csv file
+    # header is the number of rows at the beginning that don't contain data
     ret = []
     with open(file, 'r') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
@@ -12,125 +15,107 @@ def csv_parser(file, column, header):
                 header -= 1
             else:
                 ret.append(float(row[column]))
-    return ret
+    return np.array(ret, dtype=dtype)
 
-data = csv_parser('data/data_Binary_NRZ_RX(small).csv', 1, 7)
-labels = csv_parser('data/labels_Binary_NRZ_TX.csv', 0, 0)
+def dilated_cnn_model(features, labels, mode):
+    # creates neural network model
+    num_classes = 2
+    samples_per_label = 16
+    input_layer = tf.reshape(features["x"], [-1, samples_per_label, 1])
+
+    conv1 = tf.layers.conv1d(
+        inputs=input_layer, 
+        filters=4, 
+        kernel_size=8,
+        padding='same',
+        dilation_rate=2,
+        activation=tf.nn.relu,
+        name="dilated_conv_1")
+
+    pool1 = tf.layers.max_pooling1d(
+        inputs=conv1,
+        pool_size=2,
+        strides=2,
+        name="max_pool_1")
+
+    conv2_filters = 16
+    conv2 = tf.layers.conv1d(
+        inputs=pool1,
+        filters=conv2_filters, 
+        kernel_size=4,
+        padding='same',
+        dilation_rate=2,
+        activation=tf.nn.relu,
+        name="dilated_conv_2")
+
+    pool2 = tf.layers.max_pooling1d(
+        inputs=conv2, 
+        pool_size=2,
+        strides=2,
+        name="max_pool_2")
+
+    pool2_flat = tf.reshape(pool2, [-1, 4*conv2_filters])
+    dense = tf.layers.dense(inputs=pool2_flat, units=16, activation=tf.nn.relu)
+    dropout = tf.layers.dropout(inputs=dense, rate=0.4, training=mode == tf.estimator.ModeKeys.TRAIN)
+
+    logits = tf.layers.dense(inputs=dropout, units=num_classes)
+
+    predictions = {
+        "classes": tf.argmax(input=logits, axis=1),
+        "probabilities": tf.nn.softmax(logits, name="softmax_tensor")
+    }
+
+    if mode == tf.estimator.ModeKeys.PREDICT:
+        return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
+
+    loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
+
+    if mode == tf.estimator.ModeKeys.TRAIN:
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
+        train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
+        return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
+
+    eval_metric_ops = {"accuracy": tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])}
+    return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
+
+
+
+
+data = csv_parser('data/data_Binary_NRZ_RX(small).csv', 1, 7, np.float32)
+labels = csv_parser('data/labels_Binary_NRZ_TX.csv', 0, 0, np.int32)
 samples_per_label = 16
+data = np.reshape(data, [-1, samples_per_label])
 
 training_portion = 1/2
 training_size = int(len(data)*training_portion)
 training_set = data[:training_size]
 test_set = data[training_size:]
-training_labels = labels[:int(training_size/samples_per_label)]
-test_labels = labels[int(training_size/samples_per_label):]
+training_labels = labels[:training_size]
+test_labels = labels[training_size:]
 
-training_epochs = 100
-num_layers = 4
-learning_rate = 0.01
-input_samples = 2 ** num_layers
-batch_size = samples_per_label * 4
+signal_classifier = tf.estimator.Estimator(model_fn=dilated_cnn_model, model_dir="/tmp/dilated_cnn_model")
 
-x = tf.placeholder(tf.float32, [input_samples, None])
-y = tf.placeholder(tf.float32, [1, None])
+tensors_to_log = {"probabilites": "softmax_tensor"}
+logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=50)
 
-weights = []
-biases = []
-for i in range(num_layers):
-    tensor = tf.matrix_band_part(tf.random_normal([2**i, 2**(i+1)], stddev=0.03), 0, 1)
-    W = tf.Variable(tensor, name='W'+str(i))
-    weights.insert(0, W)
-    b = tf.Variable(tf.random_normal([2**i, 1]), name='b'+str(i))
-    biases.insert(0, b)
+train_input_fn = tf.estimator.inputs.numpy_input_fn(
+    x={"x": training_set},
+    y=training_labels,
+    batch_size=64,
+    num_epochs=None,
+    shuffle=False)
 
-hidden_outputs = []
-input_vector = x
-for i in range(len(weights)):
-    prod = tf.matmul(weights[i], input_vector)
-    hidden_out = tf.add(prod, biases[i])
-    hidden_out = tf.nn.relu(hidden_out)
-    hidden_outputs.append(hidden_out)
-    input_vector = hidden_out
+signal_classifier.train(
+    input_fn=train_input_fn,
+    steps=20000,
+    hooks=[logging_hook])
 
-cost = tf.losses.mean_squared_error(y, hidden_outputs[-1])
+eval_input_fn = tf.estimator.inputs.numpy_input_fn(
+    x={"x": test_set},
+    y=test_labels,
+    num_epochs=1,
+    shuffle=False)
 
-weight_gradients = []
-bias_gradients = []
-weight_updates = []
-bias_updates = []
-for i in range(num_layers):
-    W = weights[i]
-    b = biases[i]
-    grad_W, grad_b = tf.gradients(xs=[W, b], ys=cost)
-    # grad_W = tf.matrix_band_part(grad_W, 0, 1)
-    weight_gradients.append(grad_W)
-    bias_gradients.append(grad_b)
+eval_results = signal_classifier.evaluate(input_fn=eval_input_fn)
+print(eval_results)
 
-    new_W = W.assign(W - learning_rate * grad_W)
-    new_b = b.assign(b - learning_rate * grad_b)
-    weight_updates.append(new_W)
-    bias_updates.append(new_b)
-
-init = tf.global_variables_initializer()
-
-with tf.Session() as sess:
-    sess.run(init)
-    print("training...")
-    for epoch in range(training_epochs):
-        avg_cost = 0
-        batch_count = 0
-        for i in range(0, len(training_set), batch_size):
-            if i + batch_size <= len(training_set) - input_samples:
-                batch_y = [[]]
-                batch_x = [[] for j in range(input_samples)]
-                j = i
-                while j < i + batch_size:
-                    batch_y[0].append(training_labels[(j + input_samples - 1)//samples_per_label])
-                    for k in range(input_samples):
-                        batch_x[k].append(training_set[j + k])
-                    j += 1
-                fetches = {'W': weight_updates, 'b': bias_updates, 'c': cost}
-                result_dict = sess.run(fetches, feed_dict={x: batch_x, y: batch_y})
-                avg_cost += result_dict['c']
-                batch_count += 1
-
-        avg_cost /= batch_count
-        if epoch % 10 == 0 or epoch == training_epochs - 1:
-            print("epoch: " + str(epoch) + "\t avg cost: " + str(avg_cost))
-
-    print("done training.")
-
-    test_input = [[] for i in range(samples_per_label)]
-    for i in range(len(test_labels)):
-        single_input = test_set[i*samples_per_label:(i+1)*samples_per_label]
-        for j in range(samples_per_label):
-            test_input[j].append(single_input[j])
-
-    # maximum distance between prediction and label before prediction is incorrect
-    threshold = tf.constant(0.5)
-
-    wrong_predictions = tf.greater(tf.abs(tf.subtract(hidden_outputs[-1], y)), threshold)
-    misses = tf.reduce_sum(tf.cast(wrong_predictions, tf.uint8))
-    missed_bits = misses.eval({x: test_input, y: [test_labels]})
-    print("test cost: " + str(cost.eval({x: test_input, y: [test_labels]})))
-    print("missed bits: " + str(missed_bits))
-
-    print(hidden_outputs[-1].eval({x: test_input, y: [test_labels]})[:8])
-    print(test_labels[:8])
-
-    "TODO:
-        change to classifier
-        add pooling layers 
-        cost function: cross entropy
-
-        start at 2nd bit to do dilated convolution, window lag = 16, sweep over all 16 samples. 
-        dilated convolution layer: k filters = number of bits squared = 4 for binary, 16 for pam4
-        max pooling layer: down sample to 8 samples per bit
-        dilated convolution layer: k filters
-        max pooling: down sample to 4
-        concatenate k x k into single waveform
-        matrix of weights to classes 
-
-
-
-    "

@@ -58,5 +58,5 @@ Gaussian Radial Basis Kernel files\
 kernelbin_SVM.m -this function contains the RBF kernel code for binary data training and testing\
 kernelpam_SVM.m -this function contains the RBF kernel code for 4PAM data training and testing\
 kernelfindparam.m -m file that deploys the binary kernel. Oneshot variable determines if a tuning sweep is to be performed using variable vectors, otherwise the function will be run once with our default tuned values.\
-kernelfindparampam.m  -m file that deploys the 4PAM kernel.\
+kernelfindparampam.m  -m file that deploys the 4PAM kernel.
 

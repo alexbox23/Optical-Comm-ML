@@ -4,6 +4,15 @@ Feature Extraction files
 auto_labeler.m - run program to generate label file from TX file
 data_parser.m - function to parse RX and label files into training and test arrays
 
+Maximum Likelihood Estimator files
+MLbin.m - runs max likelihood on binary data
+MLpam.m - runs max likelihood on 4-PAM data
+
+Convolutional Neural Net files
+dilated_neural_net.py - defines helper functions for training the CNN
+test_nn_binary.py - trains CNN to classify binary data
+test_nn_pam4.py - trains CNN to classify 4-PAM data
+
 Support Vector Machine files
 SVM_train.m - function to train an SVM hyperplane using training array and hyperparameters
 SVM_test.m - function to test an SVM hyperplane using test array and hyperparameters

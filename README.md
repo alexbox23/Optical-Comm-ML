@@ -16,7 +16,7 @@ Support Vector Machine (Matlab)\
 The time-domain signal is partitioned into sets of samples based on the bit rate.\
 The SVM is trained on the samples after they have been cast as 16-dimensional feature vectors, where each dimension is a sample within the clock cycle.
 
-Dependencies\
+Dependencies
 >Matlab: None\
 >Python: Python 3.6, Numpy 1.14, TensorFlow 1.6
 
@@ -32,10 +32,13 @@ Convolutional Neural Net files\
 dilated_neural_net.py - defines helper functions for training the CNN\
 test_nn_binary.py - run to train CNN to classify binary data\
 test_nn_pam4.py - run to train CNN to classify 4-PAM data\
-To run visualizations, use the following command (alternatively python -m tensorboard.main)\
->tensorboard --logdir=/tmp/dilated_cnn_model_binary\
-or\
->tensorboard --logdir=/tmp/dilated_cnn_model_pam4\
+To run visualizations, use the following command (alternatively python -m tensorboard.main)
+>tensorboard --logdir=/tmp/dilated_cnn_model_binary
+
+or
+
+>tensorboard --logdir=/tmp/dilated_cnn_model_pam4
+
 Once TensorBoard is running, navigate your web browser to localhost:6006 to view the TensorBoard.
 
 

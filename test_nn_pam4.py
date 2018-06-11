@@ -1,3 +1,5 @@
+# Code for testing the neural network on the PAM4 data.
+
 import tensorflow as tf
 import csv
 import numpy as np
@@ -7,6 +9,7 @@ import dilated_neural_net
 tf.logging.set_verbosity(tf.logging.INFO)
 
 
+# parse the csv files
 data = dilated_neural_net.csv_parser('data/data_PAM4_RX(small).csv', 1, 7, np.float32)
 labels = dilated_neural_net.csv_parser('data/labels_PAM4_TX.csv', 0, 0, np.int32)
 samples_per_label = 16
@@ -19,6 +22,7 @@ test_set = data[training_size:]
 training_labels = labels[:training_size]
 test_labels = labels[training_size:]
 
+# initialize the neural network model
 signal_classifier = tf.estimator.Estimator(
     model_fn=dilated_neural_net.dilated_cnn_model_pam4,
     model_dir="/tmp/dilated_cnn_model_pam4",
@@ -27,6 +31,7 @@ signal_classifier = tf.estimator.Estimator(
 tensors_to_log = {"probabilites": "softmax_tensor"}
 logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=50)
 
+# train the neural network
 train_input_fn = tf.estimator.inputs.numpy_input_fn(
     x={"x": training_set},
     y=training_labels,
@@ -39,6 +44,7 @@ signal_classifier.train(
     steps=100000,
     hooks=[logging_hook])
 
+# run the trained model on the test data
 eval_input_fn = tf.estimator.inputs.numpy_input_fn(
     x={"x": test_set},
     y=test_labels,
